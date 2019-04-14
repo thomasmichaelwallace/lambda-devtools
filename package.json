@@ -8,7 +8,11 @@
   "license": "MIT",
   "scripts": {
     "test": "echo TODO: tests",
-    "pre-commit": "yarn test"
+    "pre-commit": "yarn test",
+    "client": "node ./src/client"
+  },
+  "bin": {
+    "lambda-devtools": "./src/client.js"
   },
   "devDependencies": {
     "@commitlint/cli": "^7.5.2",
