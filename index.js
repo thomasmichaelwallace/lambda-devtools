@@ -1,3 +1,3 @@
-const inspect = require('./src/inspect');
+const { inspect } = require('./src/inspect');
 
 module.exports = inspect;

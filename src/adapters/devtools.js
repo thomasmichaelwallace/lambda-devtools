@@ -3,7 +3,7 @@ const pino = require('pino');
 const { level } = require('../../config');
 const { transpile } = require('../patches/console');
 
-const logger = pino({ name: 'lambda-devtools:bridges:iot', level });
+const logger = pino({ name: 'lambda-devtools:adapters:devtools', level });
 
 function start(id, { request, socket, head }, Bridge, options = {}) {
   logger.debug({ id }, 'upgrading socket to iot bridge');
@@ -21,21 +21,21 @@ function start(id, { request, socket, head }, Bridge, options = {}) {
     };
     const bridge = new Bridge(id, receive, { mode: 'devtools', ...options });
 
-    devtools.onmessage('message', (data) => {
+    devtools.on('message', (data) => {
       logger.debug({ data }, `devtools -> lambda/${id}`);
       bridge.send(data);
     });
 
-    devtools.onerror((error) => {
+    devtools.on('error', (error) => {
       logger.error({ error }, 'devtools error');
     });
 
-    devtools.onclose(() => {
+    devtools.on('close', () => {
       logger.debug('devtools closed');
       // TODO: anything?
     });
   });
-  return server.handleUpdate(request, socket, head, (ws) => {
+  return server.handleUpgrade(request, socket, head, (ws) => {
     server.emit('connection', ws, request);
   });
 }

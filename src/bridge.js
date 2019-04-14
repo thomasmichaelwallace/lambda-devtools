@@ -1,9 +1,8 @@
 const lambda = require('./adapters/lambda');
 const tryParse = require('./utilities/tryParse');
-const IotBridge = require('./bridges/IotBridge');
+const Bridge = require('./bridges/IotBridge');
 
 function bridge(options) {
-  const Bridge = IotBridge;
   lambda.start(options.inspectorUrl, Bridge, options);
 }
 

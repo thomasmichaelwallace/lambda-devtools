@@ -2,7 +2,7 @@ const awsIot = require('aws-iot-device-sdk');
 const pino = require('pino');
 const tryParse = require('../utilities/tryParse');
 const { level } = require('../../config');
-
+const iotDefaults = require('../../scratch/defaults');
 
 const logger = pino({ name: 'lambda-devtools:bridges:iot', level });
 
@@ -19,7 +19,8 @@ function connect(config) {
   }
   iot = awsIot.device(config);
   iot.on('connect', () => { logger.debug('connected'); });
-  iot.on('message', ({ topic, payload }) => {
+  iot.on('message', (topic, payload) => {
+    logger.debug({ topic, payload }, 'message');
     if (topic === ANNOUNCE_TOPIC) {
       const session = tryParse(payload.toString());
       if (!session) {
@@ -36,40 +37,56 @@ function connect(config) {
   });
 }
 function whenConnected(fn) {
-  if (iot.connected) {
+  if (iot /* && iot.connected */) {
+    logger.debug('when connected ran');
     fn();
-  } else {
-    iot.on('connect', () => fn());
+    return true;
   }
+  if (iot) {
+    logger.debug({ iot }, 'when connected waited');
+    iot.on('connect', () => {
+      logger.debug('when connected closed');
+      fn();
+    });
+    return true;
+  }
+  logger.warn('skipped when connected prior to attach');
+  return false;
 }
 
 class IotBridge {
-  constructor(id, receive, { mode, iot: config }) {
+  constructor(id, receive, { mode, iot: config = iotDefaults }) {
     this.id = id;
     this.receiveFn = receive;
 
-    this.sessions = null;
-
+    let clientId;
     if (mode === 'lambda') {
       this.inbound = `${LAMBDA_TOPIC_PREFIX}/${id}`;
       this.outbound = `${DEVTOOLS_TOPIC_PREFIX}/${id}`;
-      this.clientId = `lambda-${id}`;
-    } else if (mode === 'devtools') {
-      this.inbound = `${DEVTOOLS_TOPIC_PREFIX}/${id}`;
-      this.outbound = `${LAMBDA_TOPIC_PREFIX}/${id}`;
+      clientId = `lambda-${id}`;
+    } else if (mode === 'devtools' || mode === 'client') {
+      if (mode === 'devtools') {
+        this.inbound = `${DEVTOOLS_TOPIC_PREFIX}/${id}`;
+        this.outbound = `${LAMBDA_TOPIC_PREFIX}/${id}`;
+      }
       const uuid = (Math.random() * 100000000000).toString(36).replace('.', '');
-      this.clientId = `devtools-${uuid}`;
+      clientId = `devtools-${uuid}`;
     } else {
       throw new TypeError(`Unsupported mode "${mode}"`);
     }
 
-    connect({ ...config, clientId: this.clientId });
-    const subscribe = () => {
-      iot.subscribe(this.inbound);
-      iot.on('message', this.receive);
-      logger.debug({ topic: this.subscribedTopic, id }, 'subscribed');
-    };
-    whenConnected(subscribe);
+    connect({ ...config, clientId });
+    if (this.inbound) {
+      const subscribe = () => {
+        iot.subscribe(this.inbound);
+        iot.on('message', (...args) => {
+          logger.debug({ ...args }, 'inbound message');
+          this.receive(...args);
+        });
+        logger.debug({ topic: this.inbound, id }, 'subscribed');
+      };
+      whenConnected(subscribe);
+    }
   }
 
   announce() {
@@ -78,7 +95,7 @@ class IotBridge {
     const url = `${process.env.LAMBDA_TASK_ROOT}/${src}.js`;
     const session = { id: this.id, title, url };
     const announce = () => {
-      logger.debug({ session: this.session }, 'iot bridge announced');
+      logger.debug({ session }, 'announced');
       iot.publish(ANNOUNCE_TOPIC, JSON.stringify(session));
     };
     whenConnected(announce);
@@ -86,24 +103,26 @@ class IotBridge {
 
   static sessions() {
     if (!sessions) {
-      sessions = {};
+      logger.debug('check sessions');
       const subscribe = () => {
         iot.subscribe(ANNOUNCE_TOPIC);
         logger.debug({ topic: ANNOUNCE_TOPIC }, 'subscribed');
       };
-      whenConnected(subscribe);
+      sessions = whenConnected(subscribe)
+        ? sessions || {}
+        : undefined;
     }
-    return sessions;
+    return sessions || {};
   }
 
-  receive({ topic, payload }) {
+  receive(topic, payload) {
     if (topic === this.inbound) {
-      this.receiveFn(payload);
+      this.receiveFn(payload.toString());
     }
   }
 
   send(data) {
-    if (!iot || !iot.connected) {
+    if (!iot || !this.outbound) {
       logger.warn({ data }, 'iot not connected; message dropped');
       return;
     }

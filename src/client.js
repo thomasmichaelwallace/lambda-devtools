@@ -2,13 +2,13 @@ const http = require('http');
 const pino = require('pino');
 const url = require('url');
 const devtools = require('./adapters/devtools');
-const IotBridge = require('./bridges/IotBridge');
+const Bridge = require('./bridges/IotBridge');
 const { level } = require('../config');
 
 const logger = pino({ name: 'lambda-devtools:client', level });
 
-const Bridge = IotBridge;
 const options = {};
+
 const [_, __, host = '127.0.0.1', port = '9229'] = process.argv; // eslint-disable-line no-unused-vars
 
 function asDevtoolsJson({ id, title, url: file }) {
@@ -25,14 +25,16 @@ function asDevtoolsJson({ id, title, url: file }) {
 }
 
 const server = http.createServer();
+const bridge = new Bridge(null, () => {}, { mode: 'client' }); // eslint-disable-line no-unused-vars
 
 server.on('request', (request, response) => {
-  logger.debug({ request }, 'server request');
-  if (!request.method.toUpperCase() === 'GET') {
+  // logger.debug({ request }, 'server request');
+  if (request.method.toUpperCase() !== 'GET') {
     logger.warn({ method: request.method }, 'unsupported method');
     return response.end();
   }
   const { pathname } = url.parse(request.url);
+  // logger.info({ pathname, sessions: Bridge.sessions() }, 'request');
   response.setHeader('Content-Type', 'application/json');
   response.statusCode = 200;
   if (pathname === '/json') {
@@ -49,8 +51,9 @@ server.on('request', (request, response) => {
 });
 
 server.on('upgrade', (request, socket, head) => {
-  logger.debug({ request }, 'server upgrade');
-  const id = url.parse(request.url).pathname.replace('/');
+  // logger.debug({ request }, 'server upgrade');
+  const id = url.parse(request.url).pathname.replace('/', '');
+  logger.debug({ id }, 'upgrade');
   const session = Bridge.sessions()[id];
   if (!session) {
     logger.warn({ id }, 'unknown lambda id');
@@ -60,3 +63,4 @@ server.on('upgrade', (request, socket, head) => {
 });
 
 server.listen(port, host);
+logger.info(`client listening on ${host}:${port}`);

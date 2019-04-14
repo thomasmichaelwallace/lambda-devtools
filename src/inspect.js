@@ -1,28 +1,31 @@
 const inspector = require('inspector');
+const path = require('path');
 const { fork } = require('child_process');
 
-let url;
+let inspectorUrl;
 let bridge;
+
+const PORT = 1234;
 
 function inspect({
   enabled = true,
 } = {}) {
   if (!enabled) {
-    if (url) {
+    if (inspectorUrl) {
       inspector.close();
       bridge.kill();
     }
     return;
   }
-  if (url || inspector.url()) {
+  if (inspectorUrl || inspector.url()) {
     inspector.close();
   }
   if (bridge) {
     bridge.kill();
   }
-  url = (inspector.open() || inspector.url());
-  const options = JSON.stringify({ url });
-  bridge = fork('./bridge', [options]);
+  inspectorUrl = (inspector.open(PORT) || inspector.url());
+  const options = JSON.stringify({ inspectorUrl });
+  bridge = fork(path.join(__dirname, './bridge'), [options]);
 }
 
 module.exports.inspect = inspect;
