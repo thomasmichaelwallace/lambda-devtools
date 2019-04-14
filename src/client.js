@@ -1,14 +1,16 @@
 const http = require('http');
 const pino = require('pino');
 const url = require('url');
-const { bridge } = require('./bridges/iot');
+const devtools = require('./adapters/devtools');
+const IotBridge = require('./bridges/IotBridge');
 const { level } = require('../config');
 
 const logger = pino({ name: 'lambda-devtools:client', level });
 
+const Bridge = IotBridge;
+const options = {};
 const [_, __, host = '127.0.0.1', port = '9229'] = process.argv; // eslint-disable-line no-unused-vars
 
-const sessions = {};
 function asDevtoolsJson({ id, title, url: file }) {
   return {
     description: 'remove node.js lambda instance',
@@ -34,7 +36,7 @@ server.on('request', (request, response) => {
   response.setHeader('Content-Type', 'application/json');
   response.statusCode = 200;
   if (pathname === '/json') {
-    const jsonSessions = Object.values(sessions).map(asDevtoolsJson);
+    const jsonSessions = Object.values(Bridge.sessions()).map(asDevtoolsJson);
     return response.end(JSON.stringify(jsonSessions));
   }
   if (pathname === '/json/version') {
@@ -49,12 +51,12 @@ server.on('request', (request, response) => {
 server.on('upgrade', (request, socket, head) => {
   logger.debug({ request }, 'server upgrade');
   const id = url.parse(request.url).pathname.replace('/');
-  const session = sessions[id];
+  const session = Bridge.sessions()[id];
   if (!session) {
     logger.warn({ id }, 'unknown lambda id');
     return socket.destroy();
   }
-  return bridge(id, { request, socket, head });
+  return devtools.start(id, { request, socket, head }, Bridge, options);
 });
 
 server.listen(port, host);

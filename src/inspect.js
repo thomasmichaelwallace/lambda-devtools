@@ -6,7 +6,6 @@ let bridge;
 
 function inspect({
   enabled = true,
-  local = false,
 } = {}) {
   if (!enabled) {
     if (url) {
@@ -22,10 +21,8 @@ function inspect({
     bridge.kill();
   }
   url = (inspector.open() || inspector.url());
-  const bridgeModule = local
-    ? './bridges/loopback' // TODO: loopback interface
-    : './bridges/iot';
-  bridge = fork(bridgeModule);
+  const options = JSON.stringify({ url });
+  bridge = fork('./bridge', [options]);
 }
 
 module.exports.inspect = inspect;
