@@ -1,2 +1,2 @@
 # lambda-devtools
-Chrome remote debugging for node.js lambda functions
+Chrome Debugging Protocol support for remote Node.js AWS Lambda functions
