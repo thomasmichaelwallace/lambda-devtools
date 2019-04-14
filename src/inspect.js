@@ -1,6 +1,7 @@
 const inspector = require('inspector');
 const path = require('path');
 const { fork } = require('child_process');
+const { patch } = require('./patches/console');
 
 let inspectorUrl;
 let bridge;
@@ -24,6 +25,9 @@ function inspect({
   }
   if (bridge) {
     bridge.kill();
+  }
+  if (patchConsole) {
+    patch();
   }
   inspectorUrl = (inspector.open(PORT) || inspector.url());
   const options = JSON.stringify({ inspectorUrl, patchConsole, iot });

@@ -34,7 +34,7 @@ function asDevtoolsJson({ id, title, url: file }) {
 }
 
 const server = http.createServer();
-const bridge = new Bridge(null, () => {}, { mode: 'client' }); // eslint-disable-line no-unused-vars
+const bridge = new Bridge(null, () => {}, { mode: 'client', ...options }); // eslint-disable-line no-unused-vars
 
 server.on('request', (request, response) => {
   // logger.debug({ request }, 'server request');

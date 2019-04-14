@@ -15,8 +15,15 @@ function patch() {
 
   ['debug', 'info', 'log', 'warn', 'error'].forEach((key) => {
     const type = key === 'warn' ? 'warning' : key;
+    if (console[key].name === 'bound consoleCall') {
+      logger.info({ key }, 'left un-patched console');
+      return;
+    }
+    logger.info({ key }, 'patched console');
+    const { [key]: forward } = console;
     console[key] = (...args) => {
       console.dir(PATCHED_ARG_A, PATCHED_ARG_B, type, ...args);
+      forward(...args);
     };
   });
 

@@ -55,6 +55,7 @@ function whenConnected(fn) {
 
 class IotBridge {
   constructor(id, receive, { mode, iot: config }) {
+    logger.info({ config });
     this.id = id;
     this.receiveFn = receive;
 
