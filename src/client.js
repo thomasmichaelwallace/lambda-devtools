@@ -1,15 +1,24 @@
 const http = require('http');
 const pino = require('pino');
 const url = require('url');
+const { argv } = require('yargs');
 const devtools = require('./adapters/devtools');
 const Bridge = require('./bridges/IotBridge');
 const { level } = require('../config');
 
 const logger = pino({ name: 'lambda-devtools:client', level });
 
-const options = {};
-
-const [_, __, host = '127.0.0.1', port = '9229'] = process.argv; // eslint-disable-line no-unused-vars
+const host = argv.host || '127.0.0.1';
+const port = argv.port || '9229';
+const options = {
+  iot: {
+    host: argv['iot-endpoint'],
+    certPath: argv['iot-cert'],
+    caPath: argv['iot-ca'],
+    keyPath: argv['iot-key'],
+  },
+  patchConsole: !argv['unpatch-console'],
+};
 
 function asDevtoolsJson({ id, title, url: file }) {
   return {

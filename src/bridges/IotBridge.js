@@ -2,7 +2,6 @@ const awsIot = require('aws-iot-device-sdk');
 const pino = require('pino');
 const tryParse = require('../utilities/tryParse');
 const { level } = require('../../config');
-const iotDefaults = require('../../scratch/defaults');
 
 const logger = pino({ name: 'lambda-devtools:bridges:iot', level });
 
@@ -55,7 +54,7 @@ function whenConnected(fn) {
 }
 
 class IotBridge {
-  constructor(id, receive, { mode, iot: config = iotDefaults }) {
+  constructor(id, receive, { mode, iot: config }) {
     this.id = id;
     this.receiveFn = receive;
 

@@ -25,6 +25,7 @@
   "dependencies": {
     "aws-iot-device-sdk": "^2.2.1",
     "pino": "^5.12.2",
-    "ws": "^6.2.1"
+    "ws": "^6.2.1",
+    "yargs": "^13.2.2"
   }
 }
