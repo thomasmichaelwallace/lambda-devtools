@@ -1,12 +1,9 @@
 const http = require('http');
-const pino = require('pino');
 const url = require('url');
 const { argv } = require('yargs');
 const devtools = require('./adapters/devtools');
 const Bridge = require('./bridges/IotBridge');
-const { level } = require('../config');
-
-const logger = pino({ name: 'lambda-devtools:client', level });
+const logger = require('./utilities/logger')('client');
 
 const host = argv.host || '127.0.0.1';
 const port = argv.port || '9229';

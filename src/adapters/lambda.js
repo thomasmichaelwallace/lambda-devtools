@@ -1,8 +1,5 @@
 const WebSocket = require('ws');
-const pino = require('pino');
-const { level } = require('../../config');
-
-const logger = pino({ name: 'lambda-devtools:adapters:lambda', level });
+const logger = require('../utilities/logger')('adapters:lambda');
 
 const id = (process.env.AWS_LAMBDA_LOG_STREAM_NAME || 'lambda-devtools-local').substr(-32);
 

@@ -1,9 +1,6 @@
 const WebSocket = require('ws');
-const pino = require('pino');
-const { level } = require('../../config');
 const { transpile } = require('../patches/console');
-
-const logger = pino({ name: 'lambda-devtools:adapters:devtools', level });
+const logger = require('../utilities/logger')('adapters:devtools');
 
 function start(id, { request, socket, head }, Bridge, options = {}) {
   logger.debug({ id }, 'upgrading socket to iot bridge');

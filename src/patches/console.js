@@ -1,8 +1,5 @@
-const pino = require('pino');
 const tryParse = require('../utilities/tryParse');
-const { level } = require('../../config');
-
-const logger = pino({ name: 'lambda-devtools:patches:console', level });
+const logger = require('../utilities/logger')('patches:console');
 
 const PATCHED_ARG_A = null;
 const PATCHED_ARG_B = '__lambda_devtools';

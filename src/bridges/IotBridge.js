@@ -1,9 +1,6 @@
 const awsIot = require('aws-iot-device-sdk');
-const pino = require('pino');
 const tryParse = require('../utilities/tryParse');
-const { level } = require('../../config');
-
-const logger = pino({ name: 'lambda-devtools:bridges:iot', level });
+const logger = require('../utilities/logger')('bridges:iot');
 
 const ANNOUNCE_TOPIC = 'lambda-devtools/announce';
 const LAMBDA_TOPIC_PREFIX = 'lambda-devtools/lambda';
