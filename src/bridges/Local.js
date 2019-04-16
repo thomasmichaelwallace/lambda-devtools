@@ -68,6 +68,11 @@ class SimpleWs {
     const data = JSON.stringify({ topic, payload });
     this._ws.send(data);
   }
+
+  close() {
+    this._ws.close();
+    logger.debug('disconnected');
+  }
 }
 
 
@@ -112,6 +117,10 @@ class LocalDevtoolsBridge {
   send(message) {
     this._ws.send(message);
   }
+
+  close() {
+    this._ws.close();
+  }
 }
 
 class LocalClientBridge {
@@ -130,9 +139,6 @@ class LocalClientBridge {
   }
 
   connect(id, onMessage) {
-    if (this._connections[id]) {
-      return this._connections[id];
-    }
     const devtools = new LocalDevtoolsBridge(id, onMessage, this._localConfig);
     this._connections[id] = devtools;
     return this._connections[id];

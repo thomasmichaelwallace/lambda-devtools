@@ -29,7 +29,7 @@ function start(id, { request, socket, head }, clientBridge, options = {}) {
 
     devtools.on('close', () => {
       logger.debug('devtools closed');
-      // TODO: anything?
+      bridge.close();
     });
   });
   return server.handleUpgrade(request, socket, head, (ws) => {

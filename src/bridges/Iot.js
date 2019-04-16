@@ -52,6 +52,11 @@ class Iot {
     }
     iot.publish(this.topics.outbound, message);
   }
+
+  close() {
+    iot.unsubscribe(this.topics.inbound);
+    delete this.topics.outbound;
+  }
 }
 
 class IotLambdaBridge {
@@ -96,6 +101,10 @@ class IotDevtoolsBridge {
   send(message) {
     this._iot.send(message);
   }
+
+  close() {
+    this._iot.close();
+  }
 }
 
 class IotClientBridge {
@@ -112,9 +121,6 @@ class IotClientBridge {
 
   // public
   connect(id, onMessage) {
-    if (this._connections[id]) {
-      return this._connections[id];
-    }
     const devtools = new IotDevtoolsBridge(id, onMessage);
     this._connections[id] = devtools;
     return this._connections[id];
