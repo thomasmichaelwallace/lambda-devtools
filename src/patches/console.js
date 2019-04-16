@@ -39,20 +39,21 @@ function transpile(data) {
     || !Array.isArray(message.params.args)
     || message.params.args.length < 4
   ) {
-    logger.debug({ message }, 'skipped standard message');
+    logger.debug({ data }, 'skipped standard message');
     return data;
   }
   const a = message.params.args.shift().value;
   const b = message.params.args.shift().value;
   if (a !== PATCHED_ARG_A || b !== PATCHED_ARG_B) {
-    logger.debug({ message }, 'skipped genuine dir message');
+    logger.debug({ data }, 'skipped genuine dir message');
     return data;
   }
   const logLevel = message.params.args.shift().value;
   message.params.type = logLevel;
   message.params.stackTrace.callFrames.shift(); // remove patch frame
-  logger.debug({ message }, 'transpile patched console.dir');
-  return JSON.stringify(message);
+  const translated = JSON.stringify(message);
+  logger.debug({ translated }, 'translated patched console.dir');
+  return translated;
 }
 
 module.exports = { patch, transpile };

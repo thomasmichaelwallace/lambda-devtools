@@ -2,7 +2,7 @@ const WebSocket = require('ws');
 const { transpile } = require('../patches/console');
 const logger = require('../utilities/logger')('adapters:devtools');
 
-function start(id, { request, socket, head }, Bridge, options = {}) {
+function start(id, { request, socket, head }, clientBridge, options = {}) {
   logger.debug({ id }, 'upgrading socket to iot bridge');
   const server = new WebSocket.Server({ noServer: true });
   server.on('connection', (devtools) => {
@@ -16,7 +16,7 @@ function start(id, { request, socket, head }, Bridge, options = {}) {
         : str;
       devtools.send(message);
     };
-    const bridge = new Bridge(id, receive, { mode: 'devtools', ...options });
+    const bridge = clientBridge.connect(id, receive);
 
     devtools.on('message', (data) => {
       logger.debug({ data }, `devtools -> lambda/${id}`);

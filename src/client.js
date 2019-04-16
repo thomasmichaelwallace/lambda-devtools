@@ -1,12 +1,13 @@
 const http = require('http');
 const url = require('url');
-const { argv } = require('yargs');
+const yargs = require('yargs');
 const devtools = require('./adapters/devtools');
-const Bridge = require('./bridges/IotBridge');
+const { IotClientBridge } = require('./bridges/Iot');
 const logger = require('./utilities/logger')('client');
 
-const host = argv.host || '127.0.0.1';
-const port = argv.port || '9229';
+const { argv } = yargs;
+
+const { host, port } = argv;
 const options = {
   iot: {
     host: argv['iot-endpoint'],
@@ -14,8 +15,9 @@ const options = {
     caPath: argv['iot-ca'],
     keyPath: argv['iot-key'],
   },
-  patchConsole: !argv['unpatch-console'],
+  patchConsole: argv.patchConsole,
 };
+
 
 function asDevtoolsJson({ id, title, url: file }) {
   return {
@@ -31,20 +33,21 @@ function asDevtoolsJson({ id, title, url: file }) {
 }
 
 const server = http.createServer();
-const bridge = new Bridge(null, () => {}, { mode: 'client', ...options }); // eslint-disable-line no-unused-vars
+const bridge = new IotClientBridge(options.iot);
 
 server.on('request', (request, response) => {
-  // logger.debug({ request }, 'server request');
-  if (request.method.toUpperCase() !== 'GET') {
-    logger.warn({ method: request.method }, 'unsupported method');
+  const method = request.method.toUpperCase();
+  const { pathname } = url.parse(request.url);
+  logger.debug({ method, pathname }, 'request');
+  if (method !== 'GET') {
+    logger.warn({ method }, 'unsupported method');
     return response.end();
   }
-  const { pathname } = url.parse(request.url);
-  // logger.info({ pathname, sessions: Bridge.sessions() }, 'request');
+
   response.setHeader('Content-Type', 'application/json');
   response.statusCode = 200;
-  if (pathname === '/json') {
-    const jsonSessions = Object.values(Bridge.sessions()).map(asDevtoolsJson);
+  if (pathname === '/json' || pathname === '/json/list') {
+    const jsonSessions = Object.values(bridge.sessions).map(asDevtoolsJson);
     return response.end(JSON.stringify(jsonSessions));
   }
   if (pathname === '/json/version') {
@@ -60,12 +63,12 @@ server.on('upgrade', (request, socket, head) => {
   // logger.debug({ request }, 'server upgrade');
   const id = url.parse(request.url).pathname.replace('/', '');
   logger.debug({ id }, 'upgrade');
-  const session = Bridge.sessions()[id];
+  const session = bridge.sessions[id];
   if (!session) {
     logger.warn({ id }, 'unknown lambda id');
     return socket.destroy();
   }
-  return devtools.start(id, { request, socket, head }, Bridge, options);
+  return devtools.start(id, { request, socket, head }, bridge, options);
 });
 
 server.listen(port, host);
