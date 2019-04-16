@@ -5,7 +5,47 @@ const devtools = require('./adapters/devtools');
 const { IotClientBridge } = require('./bridges/Iot');
 const logger = require('./utilities/logger')('client');
 
-const { argv } = yargs;
+const { argv } = yargs
+  .scriptName('lambda-devtools client')
+  .usage('$0 [args]')
+  .options({
+    host: {
+      alias: 'h',
+      default: '127.0.0.1',
+      describe: 'devtools server host address',
+    },
+    port: {
+      alias: 'p',
+      default: 9229,
+      describe: 'devtools server port',
+    },
+    'iot-endpoint': {
+      alias: 'e',
+      demandOption: true,
+      describe: 'AWS IoT broker endpoint',
+    },
+    'iot-cert': {
+      alias: 'cert',
+      demandOption: true,
+      describe: 'path to AWS IoT broker issued client certificate',
+    },
+    'iot-key': {
+      alias: 'key',
+      demandOption: true,
+      describe: 'path to AWS IoT broker issued private key',
+    },
+    'iot-ca': {
+      alias: 'ca',
+      demandOption: true,
+      describe: 'path to AWS IoT broker issued CA certificate',
+    },
+    'patch-console': {
+      default: true,
+      describe: 'enable support for lambda-devtools patched console messages',
+      type: 'boolean',
+    },
+  })
+  .help();
 
 const { host, port } = argv;
 const options = {
