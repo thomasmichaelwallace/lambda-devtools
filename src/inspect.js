@@ -3,6 +3,7 @@ const path = require('path');
 const { fork } = require('child_process');
 const { patch } = require('./patches/console');
 const logger = require('./utilities/logger')('inspect');
+const { local: defaults } = require('./config');
 
 let inspectorUrl;
 let bridge;
@@ -46,22 +47,20 @@ function inspect(options) {
     patch();
   }
   let config;
+  let inspectorPort = 9229;
   if (iot) {
     config = { type: 'iot', ...iot };
   } else if (local) {
-    const port = local.port || 8888;
-    const host = local.host || '127.0.0.1';
     config = {
       type: 'local',
-      port,
-      host,
-      address: `ws://${host}:${port}`,
-      start: true,
+      ...defaults,
+      ...local,
     };
+    inspectorPort = defaults.devtoolsPort;
   } else {
     throw new TypeError('Either IoT or Local type options must be provided');
   }
-  inspectorUrl = (inspector.open(options.port) || inspector.url());
+  inspectorUrl = (inspector.open(inspectorPort) || inspector.url());
   logger.info({ options, url: inspectorUrl }, 'attaching lambda-devtools');
   const args = [JSON.stringify({ patchConsole, inspectorUrl, ...config })];
   bridge = fork(path.join(__dirname, './bridge'), args);

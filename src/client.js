@@ -4,6 +4,7 @@ const yargs = require('yargs');
 const devtools = require('./adapters/devtools');
 const bridges = require('./bridges');
 const logger = require('./utilities/logger')('client');
+const { local, client, patches, devtoolsJson, devtoolsVersion } = require('./config');
 
 let bridge;
 const { argv } = yargs
@@ -42,21 +43,18 @@ const { argv } = yargs
   .command('local', 'start local client', {
     start: {
       alias: 's',
-      default: true,
+      default: local.start,
       describe: 'start local simple websocket server',
     },
     'local-port': {
       alias: 'l',
-      default: 8888,
+      default: local.port,
       describe: 'port to run local websocket server',
     },
   }, (args) => {
-    const port = args['local-port'];
-    const host = '127.0.0.1'
     const options = {
-      port,
-      host,
-      address: `ws:/${host}:${port}`,
+      port: args['local-port'],
+      host: local.host,
       start: args.start,
     };
     bridge = new (bridges('local').Client)(options);
@@ -64,16 +62,16 @@ const { argv } = yargs
   .options({
     host: {
       alias: 'h',
-      default: '127.0.0.1',
+      default: client.host,
       describe: 'devtools server host address',
     },
     port: {
       alias: 'p',
-      default: 9229,
+      default: client.port,
       describe: 'devtools server port',
     },
     'patch-console': {
-      default: true,
+      default: patches.console,
       describe: 'enable support for lambda-devtools patched console messages',
       type: 'boolean',
     },
@@ -82,15 +80,12 @@ const { argv } = yargs
 
 const { host, port, patchConsole } = argv;
 
-
 function asDevtoolsJson({ id, title, url: file }) {
   return {
-    description: 'remove node.js lambda instance',
+    ...devtoolsJson,
     devtoolsFrontendUrl: `chrome-devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=${host}:${port}/${id}`,
-    faviconUrl: 'https://nodejs.org/static/favicon.ico',
     id,
     title,
-    type: 'node',
     url: `file://${file}`,
     webSocketDebuggerUrl: `ws://${host}:${port}/${id}`,
   };
@@ -114,8 +109,7 @@ server.on('request', (request, response) => {
     return response.end(JSON.stringify(jsonSessions));
   }
   if (pathname === '/json/version') {
-    const jsonVersion = { Browser: 'node.js/v8.10.0', 'Protocol-Version': '1.1' };
-    return response.end(JSON.stringify(jsonVersion));
+    return response.end(JSON.stringify(devtoolsVersion));
   }
   logger.warn({ pathname }, 'unsupported endpoint');
   response.statusCode = 400;

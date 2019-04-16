@@ -21,7 +21,7 @@ class SimpleWsServer {
         });
       });
     });
-    this._wss.on('listening', (ws) => {
+    this._wss.on('listening', () => {
       logger.info('simple ws server listening');
       onReady();
     });
@@ -34,7 +34,8 @@ class SimpleWs {
   }) {
     this.emitMessage = onMessage;
     this.topics = topics;
-    this._ws = new WebSocket(localConfig.address, localConfig);
+    const address = `ws://${localConfig.host}:${localConfig.port}`;
+    this._ws = new WebSocket(address, localConfig);
     logger.debug({ localConfig }, 'connecting to simple ws server');
     this._ws.on('open', () => {
       logger.debug('connected');
@@ -116,7 +117,7 @@ class LocalDevtoolsBridge {
 class LocalClientBridge {
   constructor({ start, ...localConfig }) {
     if (start) {
-      this._server = new SimpleWsServer(localConfig,);
+      this._server = new SimpleWsServer(localConfig);
     }
 
     const topics = { inbound: ANNOUNCE_TOPIC };
