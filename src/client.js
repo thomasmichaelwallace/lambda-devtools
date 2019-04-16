@@ -2,12 +2,65 @@ const http = require('http');
 const url = require('url');
 const yargs = require('yargs');
 const devtools = require('./adapters/devtools');
-const { IotClientBridge } = require('./bridges/Iot');
+const bridges = require('./bridges');
 const logger = require('./utilities/logger')('client');
 
+let bridge;
 const { argv } = yargs
   .scriptName('lambda-devtools client')
   .usage('$0 [args]')
+  .command('$0', 'start iot client', {
+    'iot-endpoint': {
+      alias: 'e',
+      describe: 'AWS IoT broker endpoint',
+      demandOption: true,
+    },
+    'iot-cert': {
+      alias: 'cert',
+      describe: 'path to AWS IoT broker issued client certificate',
+      demandOption: true,
+    },
+    'iot-key': {
+      alias: 'key',
+      describe: 'path to AWS IoT broker issued private key',
+      demandOption: true,
+    },
+    'iot-ca': {
+      alias: 'ca',
+      describe: 'path to AWS IoT broker issued CA certificate',
+      demandOption: true,
+    },
+  }, (args) => {
+    const options = {
+      host: args['iot-endpoint'],
+      certPath: args['iot-cert'],
+      caPath: args['iot-ca'],
+      keyPath: args['iot-key'],
+    };
+    bridge = new (bridges('iot').Client)(options);
+  })
+  .command('local', 'start local client', {
+    start: {
+      alias: 's',
+      default: true,
+      describe: 'start local simple websocket server',
+    },
+    'local-port': {
+      alias: 'l',
+      default: 8888,
+      describe: 'port to run local websocket server',
+    },
+  }, (args) => {
+    const port = args['local-port'];
+    const host = '127.0.0.1'
+    const options = {
+      port,
+      host,
+      address: `ws:/${host}:${port}`,
+      start: args.start,
+    };
+    bridge = new (bridges('local').Client)(options);
+  })
   .options({
     host: {
       alias: 'h',
@@ -19,26 +72,6 @@ const { argv } = yargs
       default: 9229,
       describe: 'devtools server port',
     },
-    'iot-endpoint': {
-      alias: 'e',
-      demandOption: true,
-      describe: 'AWS IoT broker endpoint',
-    },
-    'iot-cert': {
-      alias: 'cert',
-      demandOption: true,
-      describe: 'path to AWS IoT broker issued client certificate',
-    },
-    'iot-key': {
-      alias: 'key',
-      demandOption: true,
-      describe: 'path to AWS IoT broker issued private key',
-    },
-    'iot-ca': {
-      alias: 'ca',
-      demandOption: true,
-      describe: 'path to AWS IoT broker issued CA certificate',
-    },
     'patch-console': {
       default: true,
       describe: 'enable support for lambda-devtools patched console messages',
@@ -47,16 +80,7 @@ const { argv } = yargs
   })
   .help();
 
-const { host, port } = argv;
-const options = {
-  iot: {
-    host: argv['iot-endpoint'],
-    certPath: argv['iot-cert'],
-    caPath: argv['iot-ca'],
-    keyPath: argv['iot-key'],
-  },
-  patchConsole: argv.patchConsole,
-};
+const { host, port, patchConsole } = argv;
 
 
 function asDevtoolsJson({ id, title, url: file }) {
@@ -73,7 +97,6 @@ function asDevtoolsJson({ id, title, url: file }) {
 }
 
 const server = http.createServer();
-const bridge = new IotClientBridge(options.iot);
 
 server.on('request', (request, response) => {
   const method = request.method.toUpperCase();
@@ -108,7 +131,7 @@ server.on('upgrade', (request, socket, head) => {
     logger.warn({ id }, 'unknown lambda id');
     return socket.destroy();
   }
-  return devtools.start(id, { request, socket, head }, bridge, options);
+  return devtools.start(id, { request, socket, head }, bridge, { patchConsole });
 });
 
 server.listen(port, host);

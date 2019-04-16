@@ -1,11 +1,11 @@
 const lambda = require('./adapters/lambda');
 const tryParse = require('./utilities/tryParse');
-const { IotLambdaBridge } = require('./bridges/Iot');
+const bridges = require('./bridges');
 const logger = require('./utilities/logger')('bridge');
 
 function bridge(options) {
   logger.debug('bridge forked successfully');
-  lambda.start(options.inspectorUrl, IotLambdaBridge, options);
+  lambda.start(options.inspectorUrl, bridges(options.type).Lambda, options);
 }
 
 const options = tryParse(process.argv[2]);

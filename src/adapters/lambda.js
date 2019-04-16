@@ -29,7 +29,7 @@ function start(inspectorUrl, Bridge, options = {}) {
       logger.debug({ message }, 'devtools -> lambda');
       lambda.send(message);
     };
-    bridge = new Bridge(session, onMessage, options.iot);
+    bridge = new Bridge(session, onMessage, options);
   });
 
   lambda.on('message', (data) => {

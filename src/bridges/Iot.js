@@ -83,6 +83,7 @@ class IotLambdaBridge {
 }
 
 class IotDevtoolsBridge {
+  // "private" constructor
   constructor(id, onMessage) {
     const topics = {
       inbound: `${DEVTOOLS_TOPIC_PREFIX}/${id}`,
@@ -91,6 +92,7 @@ class IotDevtoolsBridge {
     this._iot = new Iot({ onMessage, topics });
   }
 
+  // public
   send(message) {
     this._iot.send(message);
   }

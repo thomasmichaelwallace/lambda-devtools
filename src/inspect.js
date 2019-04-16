@@ -23,7 +23,9 @@ let bridge;
  * @param {string} options.iot.caPath path to AWS IoT issued CA certificate file
  */
 function inspect(options) {
-  const { enabled = true, patchConsole = true, iot } = options;
+  const {
+    enabled = true, patchConsole = true, iot, local,
+  } = options;
   if (!enabled) {
     if (inspectorUrl) {
       logger.info('disabling existing debug session');
@@ -43,9 +45,25 @@ function inspect(options) {
   if (patchConsole) {
     patch();
   }
+  let config;
+  if (iot) {
+    config = { type: 'iot', ...iot };
+  } else if (local) {
+    const port = local.port || 8888;
+    const host = local.host || '127.0.0.1';
+    config = {
+      type: 'local',
+      port,
+      host,
+      address: `ws://${host}:${port}`,
+      start: true,
+    };
+  } else {
+    throw new TypeError('Either IoT or Local type options must be provided');
+  }
   inspectorUrl = (inspector.open(options.port) || inspector.url());
   logger.info({ options, url: inspectorUrl }, 'attaching lambda-devtools');
-  const args = [JSON.stringify({ patchConsole, iot, inspectorUrl })];
+  const args = [JSON.stringify({ patchConsole, inspectorUrl, ...config })];
   bridge = fork(path.join(__dirname, './bridge'), args);
 }
 

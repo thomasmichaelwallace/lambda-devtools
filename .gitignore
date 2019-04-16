@@ -85,3 +85,4 @@ typings/
 
 # development files
 scratch/
+.vscode/
