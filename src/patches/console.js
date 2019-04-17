@@ -6,14 +6,14 @@ const PATCHED_ARG_B = '__lambda_devtools';
 
 function patch() {
   /* eslint-disable no-console */
-  if (console.__lambda_devtools_patched === true) { // eslint-disable-line no-underscore-dangle
-    return; // prevent nesting patches
-  }
-
   ['debug', 'info', 'log', 'warn', 'error'].forEach((key) => {
     const type = key === 'warn' ? 'warning' : key;
     if (console[key].name === 'bound consoleCall') {
       logger.info({ key }, 'left un-patched console');
+      return;
+    }
+    if (console[key].__lambda_devtools_patched === true) { // eslint-disable-line no-underscore-dangle, max-len
+      logger.debug({ key }, 'skipping patched console');
       return;
     }
     logger.info({ key }, 'patched console');
@@ -22,9 +22,8 @@ function patch() {
       console.dir(PATCHED_ARG_A, PATCHED_ARG_B, type, ...args);
       forward(...args);
     };
+    console[key].__lambda_devtools_patched = true; // eslint-disable-line no-underscore-dangle
   });
-
-  console.__lambda_devtools_patched = true; // eslint-disable-line no-underscore-dangle
   /* eslint-enable */
 }
 
