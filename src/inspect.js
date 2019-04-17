@@ -42,7 +42,7 @@ function inspect(options) {
   if (patchConsole) {
     patch();
   }
-  if (inspector.url()) {
+  if (inspectorUrl) {
     logger.info({ inspectorUrl }, 're-using inspector');
   }
   if (bridge) {
@@ -67,7 +67,7 @@ function inspect(options) {
   if (!inspectorUrl) {
     inspector.open(inspectorPort);
     inspectorUrl = inspector.url();
-    logger.debug({ inspectorUrl }, 'inspector started');
+    logger.info({ inspectorUrl }, 'inspector started');
   } else {
     logger.debug({ inspectorUrl }, 're-connecting inspector');
   }

@@ -9,7 +9,7 @@ function patch() {
   ['debug', 'info', 'log', 'warn', 'error'].forEach((key) => {
     const type = key === 'warn' ? 'warning' : key;
     if (console[key].name === 'bound consoleCall') {
-      logger.info({ key }, 'left un-patched console');
+      logger.debug({ key }, 'left un-patched console');
       return;
     }
     if (console[key].__lambda_devtools_patched === true) { // eslint-disable-line no-underscore-dangle, max-len

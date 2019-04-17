@@ -12,7 +12,7 @@ class SimpleWsServer {
     logger.debug({ config }, 'starting local ws broadcast server');
     this._wss = new WebSocket.Server(config);
     this._wss.on('connection', (ws) => {
-      logger.debug('new socket connected');
+      logger.info('new wss client connected');
       ws.on('message', (data) => {
         this._wss.clients.forEach((client) => {
           if (client !== ws && client.readyState < WebSocket.CLOSING) {
@@ -22,7 +22,7 @@ class SimpleWsServer {
       });
     });
     this._wss.on('listening', () => {
-      logger.info('simple ws server listening');
+      logger.info({ config }, 'simple ws server listening');
       onReady();
     });
   }
@@ -75,7 +75,7 @@ class SimpleWs {
 
   close() {
     this._ws.close();
-    logger.debug('disconnected');
+    logger.info('client disconnected');
   }
 }
 

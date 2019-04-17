@@ -22,7 +22,7 @@ class Iot {
       logger.debug({ iotConfig }, 'connecting to aws iot');
       iot = awsIot.device(iotConfig);
       iot.on('connect', () => {
-        logger.debug({ clientId: iotConfig.clientId }, 'connected');
+        logger.info({ clientId: iotConfig.clientId }, 'connected');
         this.onConnect();
         onReady();
       });
@@ -35,7 +35,7 @@ class Iot {
     }
     iot.subscribe(this.topics.inbound);
     iot.on('message', (...args) => this.onMessage(...args));
-    logger.debug({ topic: this.inbound }, 'subscribed');
+    logger.info({ topic: this.inbound }, 'subscribed');
   }
 
   onMessage(topic, payload) {

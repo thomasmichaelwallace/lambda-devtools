@@ -121,8 +121,9 @@ server.on('request', (request, response) => {
 });
 
 server.on('upgrade', (request, socket, head) => {
-  // logger.debug({ request }, 'server upgrade');
-  const id = url.parse(request.url).pathname.replace('/', '');
+  const { pathname } = url.parse(request.url);
+  logger.debug({ pathname }, 'server upgrade');
+  const id = pathname.replace('/', '');
   logger.debug({ id }, 'upgrade');
   const session = bridge.sessions[id];
   if (!session) {

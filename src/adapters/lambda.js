@@ -1,6 +1,6 @@
 const WebSocket = require('ws');
+const { inspect } = require('util');
 const logger = require('../utilities/logger')('adapters:lambda');
-
 
 function buildSession() {
   const id = process.env.AWS_LAMBDA_LOG_STREAM_NAME
@@ -24,10 +24,10 @@ function start(inspectorUrl, Bridge, options = {}) {
   let bridge;
 
   lambda.on('open', () => {
-    logger.debug('lambda open');
+    logger.info('lambda open');
     const onMessage = (message) => {
-      logger.debug({ message }, 'devtools -> lambda');
       if (lambda.readyState < WebSocket.CLOSING) {
+        logger.info({ message }, 'devtools -> lambda');
         lambda.send(message);
       } else {
         logger.warn({ message }, 'dropped message sent before lambda open');
@@ -38,16 +38,16 @@ function start(inspectorUrl, Bridge, options = {}) {
 
   lambda.on('message', (data) => {
     const message = data.toString();
-    logger.debug({ message }, 'lambda -> devtools');
+    logger.info({ message }, 'lambda -> devtools');
     bridge.send(message);
   });
 
   lambda.on('error', (error) => {
-    logger.error({ error }, 'lambda error');
+    logger.error({ error: inspect(error, true) }, 'lambda error');
   });
 
   lambda.on('close', () => {
-    logger.debug('lambda closed');
+    logger.warn('lambda closed');
     // TODO: anything?
   });
 }
