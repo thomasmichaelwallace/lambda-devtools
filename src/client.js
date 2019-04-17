@@ -4,7 +4,9 @@ const yargs = require('yargs');
 const devtools = require('./adapters/devtools');
 const bridges = require('./bridges');
 const logger = require('./utilities/logger')('client');
-const { local, client, patches, devtoolsJson, devtoolsVersion } = require('./config');
+const {
+  local, client, patches, devtoolsJson, devtoolsVersion,
+} = require('./config');
 
 let bridge;
 const { argv } = yargs
@@ -105,7 +107,9 @@ server.on('request', (request, response) => {
   response.setHeader('Content-Type', 'application/json');
   response.statusCode = 200;
   if (pathname === '/json' || pathname === '/json/list') {
-    const jsonSessions = Object.values(bridge.sessions).map(asDevtoolsJson);
+    const sessions = Object.values(bridge.sessions);
+    const jsonSessions = sessions.map(asDevtoolsJson);
+
     return response.end(JSON.stringify(jsonSessions));
   }
   if (pathname === '/json/version') {
