@@ -5,7 +5,6 @@ const { patch } = require('./patches/console');
 const logger = require('./utilities/logger')('inspect');
 const { local: defaults } = require('./config');
 
-let inspectorUrl;
 let bridge;
 
 /**
@@ -27,27 +26,31 @@ function inspect(options) {
   const {
     enabled = true, patchConsole = true, iot, local,
   } = options;
+  let inspectorUrl = inspector.url();
   if (!enabled) {
     if (inspectorUrl) {
-      logger.info('disabling existing debug session');
+      logger.info('disabling existing inspector session');
       inspector.close();
+    }
+    if (bridge) {
+      logger.info('disabling existing bridge');
       bridge.kill();
+      bridge = undefined;
     }
     return;
-  }
-  if (inspectorUrl || inspector.url()) {
-    logger.info('closing previous invocation debugger');
-    inspector.close();
-  }
-  if (bridge) {
-    logger.info('killing previous invocation bridge');
-    bridge.kill();
   }
   if (patchConsole) {
     patch();
   }
+  if (inspector.url()) {
+    logger.info({ inspectorUrl }, 're-using inspector');
+  }
+  if (bridge) {
+    logger.info('re-using bridge');
+    return;
+  }
   let config;
-  let inspectorPort = 9229;
+  let inspectorPort = 9239;
   if (iot) {
     config = { type: 'iot', ...iot };
   } else if (local) {
@@ -60,8 +63,21 @@ function inspect(options) {
   } else {
     throw new TypeError('Either IoT or Local type options must be provided');
   }
-  inspectorUrl = (inspector.open(inspectorPort) || inspector.url());
-  logger.info({ options, url: inspectorUrl }, 'attaching lambda-devtools');
+
+  if (!inspectorUrl) {
+    inspector.open(inspectorPort);
+    inspectorUrl = inspector.url();
+    logger.debug({ inspectorUrl }, 'inspector started');
+  } else {
+    logger.debug({ inspectorUrl }, 're-connecting inspector');
+  }
+
+  if (bridge && bridge.exitCode === null) {
+    logger.debug('re-using bridge');
+    return;
+  }
+
+  logger.info({ options }, 'attaching lambda-devtools bridge');
   const args = [JSON.stringify({ patchConsole, inspectorUrl, ...config })];
   bridge = fork(path.join(__dirname, './bridge'), args);
 }
