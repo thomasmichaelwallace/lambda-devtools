@@ -15,7 +15,7 @@ class SimpleWsServer {
       logger.debug('new socket connected');
       ws.on('message', (data) => {
         this._wss.clients.forEach((client) => {
-          if (client !== ws && client.readyState === WebSocket.OPEN) {
+          if (client !== ws && client.readyState < WebSocket.CLOSING) {
             client.send(data);
           }
         });
@@ -66,7 +66,7 @@ class SimpleWs {
   sendToTopic(topic, message) {
     const payload = message.toString();
     const data = JSON.stringify({ topic, payload });
-    if (this._ws.readyState === WebSocket.OPEN) {
+    if (this._ws.readyState < WebSocket.CLOSING) {
       this._ws.send(data);
     } else {
       logger.warn({ message, topic }, 'dropped message sent before bridge socket open');

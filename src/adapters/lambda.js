@@ -27,7 +27,7 @@ function start(inspectorUrl, Bridge, options = {}) {
     logger.debug('lambda open');
     const onMessage = (message) => {
       logger.debug({ message }, 'devtools -> lambda');
-      if (lambda.readyState === WebSocket.OPEN) {
+      if (lambda.readyState < WebSocket.CLOSING) {
         lambda.send(message);
       } else {
         logger.warn({ message }, 'dropped message sent before lambda open');

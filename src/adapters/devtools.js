@@ -14,7 +14,7 @@ function start(id, { request, socket, head }, clientBridge, options = {}) {
       const message = options.patchConsole
         ? transpile(str) || str
         : str;
-      if (devtools.readyState === WebSocket.OPEN) {
+      if (devtools.readyState < WebSocket.CLOSING) {
         devtools.send(message);
       } else {
         logger.warn({ message, id }, 'dropped message sent before devtools websocket open');
