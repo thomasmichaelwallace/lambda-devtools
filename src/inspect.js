@@ -17,10 +17,7 @@ let bridge;
  * @param {Object} options.iot aws-iot-device-sdk-js awsIot.device options
  *  see https://github.com/aws/aws-iot-device-sdk-js#device for full description.
  *  Note that clientId will be automatically assigned.
- * @param {string} options.iot.host AWS IoT endpoint to use for broker
- * @param {string} options.iot.certPath path to AWS IoT issued client certificate
- * @param {string} options.iot.keyPath path to AWS IoT issued private key
- * @param {string} options.iot.caPath path to AWS IoT issued CA certificate file
+ *  If not provided defaults to using lambda IAM role to connect to env.LAMBDA_DEVTOOLS_HOST
  */
 function inspect(options) {
   const {
@@ -51,17 +48,17 @@ function inspect(options) {
   }
   let config;
   let inspectorPort = 9239;
-  if (iot) {
-    config = { type: 'iot', ...iot };
-  } else if (local) {
+  if (local) {
     config = {
       type: 'local',
       ...defaults,
       ...local,
     };
     inspectorPort = defaults.devtoolsPort;
+  } else if (iot) {
+    config = { type: 'iot', ...iot };
   } else {
-    throw new TypeError('Either IoT or Local type options must be provided');
+    config = { type: 'iot', protocol: 'wss', host: process.env.LAMBDA_DEVTOOLS_HOST };
   }
 
   if (!inspectorUrl) {

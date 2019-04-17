@@ -13,32 +13,15 @@ const { argv } = yargs
   .scriptName('lambda-devtools client')
   .usage('$0 [args]')
   .command('$0', 'start iot client', {
-    'iot-endpoint': {
+    endpoint: {
       alias: 'e',
       describe: 'AWS IoT broker endpoint',
-      demandOption: true,
-    },
-    'iot-cert': {
-      alias: 'cert',
-      describe: 'path to AWS IoT broker issued client certificate',
-      demandOption: true,
-    },
-    'iot-key': {
-      alias: 'key',
-      describe: 'path to AWS IoT broker issued private key',
-      demandOption: true,
-    },
-    'iot-ca': {
-      alias: 'ca',
-      describe: 'path to AWS IoT broker issued CA certificate',
       demandOption: true,
     },
   }, (args) => {
     const options = {
       host: args['iot-endpoint'],
-      certPath: args['iot-cert'],
-      caPath: args['iot-ca'],
-      keyPath: args['iot-key'],
+      protocol: 'wss',
     };
     bridge = new (bridges('iot').Client)(options);
   })
