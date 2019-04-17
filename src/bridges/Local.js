@@ -66,7 +66,11 @@ class SimpleWs {
   sendToTopic(topic, message) {
     const payload = message.toString();
     const data = JSON.stringify({ topic, payload });
-    this._ws.send(data);
+    if (this._ws.readyState === WebSocket.OPEN) {
+      this._ws.send(data);
+    } else {
+      logger.warn({ message, topic }, 'dropped message sent before bridge socket open');
+    }
   }
 
   close() {

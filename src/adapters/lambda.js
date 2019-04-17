@@ -27,7 +27,11 @@ function start(inspectorUrl, Bridge, options = {}) {
     logger.debug('lambda open');
     const onMessage = (message) => {
       logger.debug({ message }, 'devtools -> lambda');
-      lambda.send(message);
+      if (lambda.readyState === WebSocket.OPEN) {
+        lambda.send(message);
+      } else {
+        logger.warn({ message }, 'dropped message sent before lambda open');
+      }
     };
     bridge = new Bridge(session, onMessage, options);
   });
