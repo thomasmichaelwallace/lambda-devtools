@@ -15,7 +15,7 @@ class SimpleWsServer {
       logger.info('new wss client connected');
       ws.on('message', (data) => {
         this._wss.clients.forEach((client) => {
-          if (client !== ws && client.readyState < WebSocket.CLOSING) {
+          if (client !== ws && client.readyState === WebSocket.OPEN) {
             client.send(data);
           }
         });
@@ -66,7 +66,7 @@ class SimpleWs {
   sendToTopic(topic, message) {
     const payload = message.toString();
     const data = JSON.stringify({ topic, payload });
-    if (this._ws.readyState < WebSocket.CLOSING) {
+    if (this._ws.readyState === WebSocket.OPEN) {
       this._ws.send(data);
     } else {
       logger.warn({ message, topic }, 'dropped message sent before bridge socket open');
@@ -92,6 +92,7 @@ class LocalLambdaBridge {
       onReady: () => this._onReady(),
       topics,
     });
+    this._onMessage = onMessage;
     this._session = session;
   }
 
@@ -116,6 +117,13 @@ class LocalDevtoolsBridge {
       outbound: `${LAMBDA_TOPIC_PREFIX}/${id}`,
     };
     this._ws = new SimpleWs({ localConfig, onMessage, topics });
+    const preamble = [
+      { method: 'Console.disable' },
+      { method: 'Debugger.disable' },
+      { method: 'Runtime.disable' },
+      { method: 'Log.disable' },
+    ].map(JSON.stringify);
+    preamble.forEach(onMessage);
   }
 
   send(message) {
