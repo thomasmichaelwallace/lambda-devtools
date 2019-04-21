@@ -25,6 +25,36 @@ const { argv } = yargs
     };
     bridge = new (bridges('iot').Client)(options);
   })
+  .command('iot-device', 'start an iot client authorised using x.509', {
+    endpoint: {
+      alias: 'e',
+      describe: 'AWS IoT broker endpoint',
+      demandOption: true,
+    },
+    'cert-path': {
+      alias: 'cert',
+      describe: 'path to pem encoded client certificate',
+      demandOption: true,
+    },
+    'ca-path': {
+      alias: 'ca',
+      describe: 'path of pem encoded client authority certificate',
+      demandOption: true,
+    },
+    'key-path': {
+      alias: 'key',
+      describe: 'path to pem encoded client private key',
+      demandOption: true,
+    },
+  }, (args) => {
+    const options = {
+      host: args.endpoint,
+      certPath: args.cert,
+      caPath: args.ca,
+      keyPath: args.key,
+    };
+    bridge = new (bridges('iot').Client)(options);
+  })
   .command('local', 'start local client', {
     start: {
       alias: 's',
