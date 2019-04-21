@@ -34,7 +34,8 @@ class Iot {
       return;
     }
     iot.subscribe(this.topics.inbound);
-    iot.on('message', (...args) => this.onMessage(...args));
+    this.listener = this.onMessage.bind(this);
+    iot.on('message', this.listener);
     logger.info({ topic: this.inbound }, 'subscribed');
   }
 
@@ -55,6 +56,7 @@ class Iot {
 
   close() {
     iot.unsubscribe(this.topics.inbound);
+    iot.removeListener('message', this.listener);
     delete this.topics.outbound;
   }
 }
@@ -89,12 +91,13 @@ class IotLambdaBridge {
 
 class IotDevtoolsBridge {
   // "private" constructor
-  constructor(id, onMessage) {
+  constructor(id, onMessage, onClose) {
     const topics = {
       inbound: `${DEVTOOLS_TOPIC_PREFIX}/${id}`,
       outbound: `${LAMBDA_TOPIC_PREFIX}/${id}`,
     };
     this._iot = new Iot({ onMessage, topics });
+    this._onClose = onClose;
   }
 
   // public
@@ -104,6 +107,7 @@ class IotDevtoolsBridge {
 
   close() {
     this._iot.close();
+    this._onClose();
   }
 }
 
@@ -121,7 +125,11 @@ class IotClientBridge {
 
   // public
   connect(id, onMessage) {
-    const devtools = new IotDevtoolsBridge(id, onMessage);
+    const onClose = () => {
+      delete this._connections[this.id];
+      delete this._sessions[this.id];
+    };
+    const devtools = new IotDevtoolsBridge(id, onMessage, onClose);
     this._connections[id] = devtools;
     return this._connections[id];
   }

@@ -14,7 +14,10 @@ function buildSession() {
   const url = process.env.LAMBDA_TASK_ROOT
     ? `${process.env.LAMBDA_TASK_ROOT}/${src}`
     : src;
-  return { id, title, url };
+  const timestamp = Date.now();
+  return {
+    id, title, url, timestamp,
+  };
 }
 
 function start(inspectorUrl, Bridge, options = {}) {
