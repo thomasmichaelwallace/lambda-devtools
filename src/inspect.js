@@ -29,6 +29,7 @@ function inspect(options) {
     iot, local, // bridges
   } = options;
   let inspectorUrl = inspector.url();
+
   if (!enabled) {
     if (inspectorUrl) {
       logger.warn('closing debugger; inspector socket will remain open due to node bug');
@@ -41,6 +42,7 @@ function inspect(options) {
     }
     return null;
   }
+
   if (patchConsole) {
     patch();
   }
@@ -60,11 +62,6 @@ function inspect(options) {
     config = { type: 'iot', protocol: 'wss', host: process.env.LAMBDA_DEVTOOLS_HOST };
   }
 
-  if (bridge && bridge.connected && restart) {
-    logger.info('killing bridge to prompt debug session restart');
-    bridge.kill();
-  }
-
   if (!inspectorUrl) {
     inspector.open(inspectorPort);
     inspectorUrl = inspector.url();
@@ -72,14 +69,20 @@ function inspect(options) {
   } else {
     logger.debug({ inspectorUrl }, 're-connecting inspector');
   }
+
+  if (bridge && bridge.connected && restart) {
+    logger.info('killing bridge to prompt debug session restart');
+    bridge.kill();
+    bridge = undefined;
+  }
   if (bridge && bridge.connected) {
     logger.info('re-using bridge');
-    return null;
+  } else {
+    logger.info({ options }, 'attaching lambda-devtools bridge');
+    const args = [JSON.stringify({ patchConsole, inspectorUrl, ...config })];
+    bridge = fork(path.join(__dirname, './bridge'), args);
   }
 
-  logger.info({ options }, 'attaching lambda-devtools bridge');
-  const args = [JSON.stringify({ patchConsole, inspectorUrl, ...config })];
-  bridge = fork(path.join(__dirname, './bridge'), args);
 
   if (brk) {
     return new Promise((res) => {
