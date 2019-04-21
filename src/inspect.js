@@ -26,8 +26,8 @@ function inspect(options) {
   let inspectorUrl = inspector.url();
   if (!enabled) {
     if (inspectorUrl) {
-      logger.info('disabling existing inspector session');
-      inspector.close();
+      logger.warn('closing debugger; inspector socket will remain open due to node bug');
+      // inspector.close() causes segfault. ths is fixed in v10.6 (nodejs/node #18761)
     }
     if (bridge) {
       logger.info('disabling existing bridge');
@@ -39,13 +39,7 @@ function inspect(options) {
   if (patchConsole) {
     patch();
   }
-  if (inspectorUrl) {
-    logger.info({ inspectorUrl }, 're-using inspector');
-  }
-  if (bridge) {
-    logger.info('re-using bridge');
-    return;
-  }
+
   let config;
   let inspectorPort = 9239;
   if (local) {
@@ -68,9 +62,8 @@ function inspect(options) {
   } else {
     logger.debug({ inspectorUrl }, 're-connecting inspector');
   }
-
-  if (bridge && bridge.exitCode === null) {
-    logger.debug('re-using bridge');
+  if (bridge && bridge.connected) {
+    logger.info(bridge, 're-using bridge');
     return;
   }
 
