@@ -20,6 +20,8 @@ function buildSession() {
   };
 }
 
+let connected = false;
+
 function start(inspectorUrl, Bridge, options = {}) {
   const session = buildSession();
   logger.debug({ inspectorUrl }, 'starting lambda adapter');
@@ -31,6 +33,11 @@ function start(inspectorUrl, Bridge, options = {}) {
     const onMessage = (message) => {
       if (lambda.readyState < WebSocket.CLOSING) {
         logger.info({ message }, 'devtools -> lambda');
+        if (!connected) {
+          connected = true;
+          logger.debug('first devtools message received; marking as connected');
+          process.send({ connected });
+        }
         lambda.send(message);
       } else {
         logger.warn({ message }, 'dropped message sent before lambda open');

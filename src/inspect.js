@@ -13,6 +13,8 @@ let bridge;
  * @param {boolean} [options.enabled=true] if true (default) inspector will be enabled and attached
  * @param {boolean} [options.restart=true] if true (default) inspector will restart the debugging
  *  session each time inspect is called
+ * @param {boolean} [options.brk=false] if true (false by default) inspector will wait until
+ *  debugger attaches before continuing execution
  * @param {boolean} [options.patchConsole=true] if true (default) console[debug|info|log|warn|error]
  * @param {integer} [options.port=9229] port (9229 by default) to use for node inspector
  *  will be (re-)patched to report in devtools
@@ -23,8 +25,8 @@ let bridge;
  */
 function inspect(options) {
   const {
-    enabled = true, patchConsole = true, restart = true, // options
-    iot, local, // brdiges
+    enabled = true, patchConsole = true, restart = true, brk = false, // options
+    iot, local, // bridges
   } = options;
   let inspectorUrl = inspector.url();
   if (!enabled) {
@@ -78,6 +80,17 @@ function inspect(options) {
   logger.info({ options }, 'attaching lambda-devtools bridge');
   const args = [JSON.stringify({ patchConsole, inspectorUrl, ...config })];
   bridge = fork(path.join(__dirname, './bridge'), args);
+
+  if (brk) {
+    // TODO: split into function.
+    // eslint-disable-next-line consistent-return
+    return new Promise((res) => {
+      bridge.on('message', (m) => {
+        logger.error({ m }, 'message');
+        res();
+      });
+    });
+  }
 }
 
 module.exports.inspect = inspect;
