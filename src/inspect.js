@@ -39,7 +39,7 @@ function inspect(options) {
       bridge.kill();
       bridge = undefined;
     }
-    return;
+    return null;
   }
   if (patchConsole) {
     patch();
@@ -74,7 +74,7 @@ function inspect(options) {
   }
   if (bridge && bridge.connected) {
     logger.info('re-using bridge');
-    return;
+    return null;
   }
 
   logger.info({ options }, 'attaching lambda-devtools bridge');
@@ -82,15 +82,17 @@ function inspect(options) {
   bridge = fork(path.join(__dirname, './bridge'), args);
 
   if (brk) {
-    // TODO: split into function.
-    // eslint-disable-next-line consistent-return
     return new Promise((res) => {
-      bridge.on('message', (m) => {
-        logger.error({ m }, 'message');
-        res();
+      bridge.on('message', (message) => {
+        if (message && typeof message === 'object' && message.connected) {
+          debugger; // eslint-disable-line no-debugger
+          res();
+        }
+        logger.warn({ message }, 'unexpected message returned from bridge');
       });
     });
   }
+  return null;
 }
 
 module.exports.inspect = inspect;

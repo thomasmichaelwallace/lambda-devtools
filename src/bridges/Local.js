@@ -117,13 +117,6 @@ class LocalDevtoolsBridge {
       outbound: `${LAMBDA_TOPIC_PREFIX}/${id}`,
     };
     this._ws = new SimpleWs({ localConfig, onMessage, topics });
-    const preamble = [
-      { method: 'Console.disable' },
-      { method: 'Debugger.disable' },
-      { method: 'Runtime.disable' },
-      { method: 'Log.disable' },
-    ].map(JSON.stringify);
-    preamble.forEach(onMessage);
   }
 
   send(message) {
