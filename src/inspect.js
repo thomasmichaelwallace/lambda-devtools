@@ -11,6 +11,8 @@ let bridge;
  * Inspector for remote DevTools
  * @param {Object} options lambda-devtools configuration
  * @param {boolean} [options.enabled=true] if true (default) inspector will be enabled and attached
+ * @param {boolean} [options.restart=true] if true (default) inspector will restart the debugging
+ *  session each time inspect is called
  * @param {boolean} [options.patchConsole=true] if true (default) console[debug|info|log|warn|error]
  * @param {integer} [options.port=9229] port (9229 by default) to use for node inspector
  *  will be (re-)patched to report in devtools
@@ -21,7 +23,8 @@ let bridge;
  */
 function inspect(options) {
   const {
-    enabled = true, patchConsole = true, iot, local,
+    enabled = true, patchConsole = true, restart = true, // options
+    iot, local, // brdiges
   } = options;
   let inspectorUrl = inspector.url();
   if (!enabled) {
@@ -55,6 +58,11 @@ function inspect(options) {
     config = { type: 'iot', protocol: 'wss', host: process.env.LAMBDA_DEVTOOLS_HOST };
   }
 
+  if (bridge && bridge.connected && restart) {
+    logger.info('killing bridge to prompt debug session restart');
+    bridge.kill();
+  }
+
   if (!inspectorUrl) {
     inspector.open(inspectorPort);
     inspectorUrl = inspector.url();
@@ -63,7 +71,7 @@ function inspect(options) {
     logger.debug({ inspectorUrl }, 're-connecting inspector');
   }
   if (bridge && bridge.connected) {
-    logger.info(bridge, 're-using bridge');
+    logger.info('re-using bridge');
     return;
   }
 
