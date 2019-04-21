@@ -20,7 +20,7 @@ const { argv } = yargs
     },
   }, (args) => {
     const options = {
-      host: args['iot-endpoint'],
+      host: args.endpoint,
       protocol: 'wss',
     };
     bridge = new (bridges('iot').Client)(options);
@@ -60,6 +60,11 @@ const { argv } = yargs
       describe: 'enable support for lambda-devtools patched console messages',
       type: 'boolean',
     },
+    latest: {
+      default: true,
+      describe: 'only list the latest session to support simple clients like vs-code',
+      type: 'boolean',
+    },
   })
   .help();
 
@@ -91,8 +96,11 @@ server.on('request', (request, response) => {
   response.statusCode = 200;
   if (pathname === '/json' || pathname === '/json/list') {
     const sessions = Object.values(bridge.sessions);
+    if (argv.latest) {
+      sessions.sort((a, b) => b.timestamp - a.timestamp);
+      sessions.splice(1);
+    }
     const jsonSessions = sessions.map(asDevtoolsJson);
-
     return response.end(JSON.stringify(jsonSessions));
   }
   if (pathname === '/json/version') {
