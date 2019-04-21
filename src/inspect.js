@@ -6,6 +6,7 @@ const logger = require('./utilities/logger')('inspect');
 const { local: defaults } = require('./config');
 
 let bridge;
+let invokeCount = 0;
 
 /**
  * Inspector for remote DevTools
@@ -24,6 +25,8 @@ let bridge;
  *  If not provided defaults to using lambda IAM role to connect to env.LAMBDA_DEVTOOLS_HOST
  */
 function inspect(options) {
+  invokeCount += 1;
+
   const {
     enabled = true, patchConsole = true, restart = true, brk = false, // options
     iot, local, // bridges
@@ -79,7 +82,9 @@ function inspect(options) {
     logger.info('re-using bridge');
   } else {
     logger.info({ options }, 'attaching lambda-devtools bridge');
-    const args = [JSON.stringify({ patchConsole, inspectorUrl, ...config })];
+    const args = [JSON.stringify({
+      patchConsole, inspectorUrl, ...config, invokeCount,
+    })];
     bridge = fork(path.join(__dirname, './bridge'), args);
   }
 

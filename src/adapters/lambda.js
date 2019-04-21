@@ -2,10 +2,11 @@ const WebSocket = require('ws');
 const { inspect } = require('util');
 const logger = require('../utilities/logger')('adapters:lambda');
 
-function buildSession() {
-  const id = process.env.AWS_LAMBDA_LOG_STREAM_NAME
+function buildSession(invokeCount = 1) {
+  const invokeId = process.env.AWS_LAMBDA_LOG_STREAM_NAME
     ? process.env.AWS_LAMBDA_LOG_STREAM_NAME.substr(-32)
     : 'lambda-devtools-local';
+  const id = `${invokeId}-${invokeCount}`;
   const region = process.env.AWS_REGION || 'local';
   const name = process.env.AWS_LAMBDA_FUNCTION_NAME || 'function-name';
   const version = process.env.AWS_LAMBDA_FUNCTION_VERSION || '[$latest]';
@@ -23,7 +24,7 @@ function buildSession() {
 let connected = false;
 
 function start(inspectorUrl, Bridge, options = {}) {
-  const session = buildSession();
+  const session = buildSession(options.invokeCount);
   logger.debug({ inspectorUrl }, 'starting lambda adapter');
   const lambda = new WebSocket(inspectorUrl);
   let bridge;
