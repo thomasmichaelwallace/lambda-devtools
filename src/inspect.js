@@ -4,6 +4,7 @@ const { fork } = require('child_process');
 const { patch } = require('./patches/console');
 const logger = require('./utilities/logger')('inspect');
 const { local: defaults } = require('./config');
+const bridged = require('./bridge');
 
 let bridge;
 let invokeCount = 0;
@@ -102,5 +103,7 @@ function inspect(options) {
   }
   return null;
 }
+
+logger.debug({ bridged: bridged.bridged }, 'detecting forked process');
 
 module.exports.inspect = inspect;

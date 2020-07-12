@@ -13,4 +13,11 @@ if (options === null || !options.inspectorUrl) {
   logger.error({ argv: process.argv }, 'bridge started with invalid options');
   process.exit();
 }
-bridge(options);
+
+if (process.connected) {
+  bridge(options);
+}
+
+module.exports = {
+  bridged: function bridged() { return !!process.connected; },
+};
